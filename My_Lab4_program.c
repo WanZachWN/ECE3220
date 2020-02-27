@@ -15,17 +15,15 @@ Accept user input an open file using argc and argv
 
 handle incorrect calls and display help
 
-1) open file and store into an int arr[]
+1) Check calling for program correctly
 
-2) Create scale and offset functions
+2) open file and store into an int arr[] 
 
-3) place in new file
+3) Create scale and offset functions
 
 4) Store Offset_data_nn.txt or Scaled_data_nn.txt
 
-5) offset (n+offset) scaled (n/scaled)
-
-convert to int and %2d
+offset (n+offset) scaled (n*scaled)
 */
 
 //boolean type for checking if file exist, scale or offset requested.
@@ -39,44 +37,68 @@ void help()
 	return;
 }
 
-//boolean expression to check if there is file, scale or offset when calling program
+//boolean expression to check if there is file, scale or offset. Also store filenumber, max value, offset and scale value.
 struct Openfilereq{  
 	bool noFile, noScale, noOffset;
 	int filenum;
-	double offset, scale;
+	double max, offset, scale;
+};
+//linked list to store data in file
+struct Node{
+	double value; //value of data
+	struct Node* next; // node pointer points to next element
 };
 
 //save computing data in this file.
-/*mvoid SaveinFile()
+void SaveinFile(struct Openfilereq *opr1, double arr[], size_t size)
 {
-	File *save;
-
-	save = fopen(nameFile, "w");
-	while()
+	FILE *save;
+	int i = 0;
+	char *newFile = (char*)malloc(sizeof(char)*5);
+	
+	if(opr1->noScale == false) //if scaling is requested set newFile to Scaled_data_nn.txt
 	{
-		
+		sprintf(newFile, "Scaled_data_%d.txt", opr1->filenum);//set the name file
+		save = fopen(newFile, "w");// make the file
+		fprintf(save, "%d %0.4lf\n", opr1->filenum, opr1->scale);//print first line
 	}
-}*/
+	else//if offset is requested set newFile to Offset_data_nn.txt
+	{
+		sprintf(newFile, "Offset_data_%d.txt", opr1->filenum); //set the name file
+		save = fopen(newFile, "w"); // make the file
+		fprintf(save, "%d %0.4lf\n", opr1->filenum, opr1->offset); //print first line
+	}
+	//print line after
+	while(i < size)
+	{
+		//compare to the max value set if less than print if not skip
+		if(arr[i] < opr1->max)
+		{
+			fprintf(save, "%0.4lf\n", arr[i]);
+		}
+		i++;
+	}
+	fclose(save);
+	return;
+}
 //scale data when user ask for scaling
-double *ScaledData(double scaled_arr[], double scale, size_t s)
+void ScaledData(double scaled_arr[], double scale, size_t size)
 {
-	for(int i = 2; i < s; i++)
+	for(int i = 0; i < size; i++)
 	{
-		scaled_arr[i] = scaled_arr[i]/scale;
-		printf("%lf", scaled_arr[i]);
+		scaled_arr[i] = scaled_arr[i]*scale;
 	}
-	return scaled_arr;
+	return;
 }
 
 //offset data when user ask for offsetting
-double *OffsetData(double offset_arr[], double offset, size_t s)
+void OffsetData(double offset_arr[], double offset, size_t size)
 {
-	for(int i = 2; i < s; i++)
+	for(int i = 0; i < size; i++)
 	{
 		offset_arr[i] = offset_arr[i]+offset;
-		printf("%lf", offset_arr[i]);
 	}
-	return offset_arr;
+	return;
 }
 //check if calling program is done properly.
 int Check(struct Openfilereq *opr1, int argc, char *argv[])
@@ -84,8 +106,13 @@ int Check(struct Openfilereq *opr1, int argc, char *argv[])
 	int n = 1; //counter
 	if(argc <= 4 || argc > 5)
 	{
+		//if user just do "./My_Lab4_program"
+		if(argc == 1)
+		{
+			printf("Error calling program! Please try again.\n");
+		}
 		//if user does not call for help and calls the program incorrectly
-		if(strcmp(argv[n], "-h") != 0)
+		else if(strcmp(argv[n], "-h") != 0)
 		{
 			printf("Error calling program! Please try again.\n");
 		}
@@ -97,68 +124,57 @@ int Check(struct Openfilereq *opr1, int argc, char *argv[])
 		help(); //display help on using the program
 		return 0;
 	}
-	//if 
+	// if everything is called with correct amount of argument
 	else if(argc <= 5)
 	{
-		while(n < argc)
+		while(n < argc)//loop to check content of argv
 		{
-			if(strcmp(argv[n], "-n") == 0)
+			if(strcmp(argv[n], "-n") == 0)//if requesting file number
 			{
-				printf("-n exist\n");
-				if(!(isdigit(*argv[n+1])))
+				if(!(isdigit(*argv[n+1])))//file number request but no value
 				{
-					printf("-n does not have value\n");//if -n but no value
 					help();//display help on using the program
 					return 0;
 				}
 				else//if there is file number given then assign to integer filenum and set the noFile to false.
 				{
-					printf("-n has value\n");
 					sscanf(argv[n+1], "%d", &opr1->filenum);
-					printf("file number: %d\n", opr1->filenum);
 					opr1->noFile = false;
 				}
 			}
-			else if(strcmp(argv[n], "-s") == 0)
+			else if(strcmp(argv[n], "-s") == 0)//if requesting scale
 			{
-				printf("-s exist\n");
-				if(!(isdigit(*argv[n+1])))
+				double isvalue;
+				char *endptr;
+				isvalue = strtod(argv[n+1], &endptr);//check next argument if value
+				if(isvalue == 0)//scale request but no value
 				{
-					printf("-s has no value\n");//if -s but no value
 					help();
 					return 0;;
 				}
 				else//if there is scale value given then assign to integer scale and set the noScale to false.
 				{
-					printf("-s has value\n");
-					sscanf(argv[n+1], "%lf", &opr1->scale);
-					printf("scaling: %lf\n", opr1->scale);
+					opr1->scale = isvalue;
 					opr1->noScale = false;
 				}
 			}
-			else if(strcmp(argv[n], "-o") == 0)
+			else if(strcmp(argv[n], "-o") == 0)//if requesting offset
 			{
-				printf("-o exist\n");
-				if(!(isdigit(*argv[n+1])))
+				double isvalue;
+				char *endptr;
+				isvalue = strtod(argv[n+1], &endptr); //check next argument if value
+				if(isvalue == 0)//offset request but no value
 				{
-					printf("-o has no value\n");//if -o but no value
 					help();
 					return 0;
 				}
 				else //if there is offset value given then assign to integer offset and set the noScale to false.
 				{
-					printf("-o has value\n");
-					sscanf(argv[n+1], "%lf", &opr1->offset);
-					printf("offsetting: %lf\n", opr1->offset);
+					opr1->offset = isvalue;
 					opr1->noOffset = false;
 				}
 			}
-			if(n == argc-1 && opr1->noFile == true)
-			{
-				printf("Error file number is not stated!\n");
-				help();
-				return 0;
-			}
+			
 			n++;
 		}
 	}
@@ -168,51 +184,70 @@ int Check(struct Openfilereq *opr1, int argc, char *argv[])
 //main function
 int main(int argc, char *argv[]) //argc - argument count, argv - argument vector
 {
-	struct Openfilereq opr1 = {true, true, true, 0, 0 ,0};
+	struct Openfilereq opr1 = {true, true, true, 0, 0, 0.0, 0.0};
 	int check = 0;
 	check = Check(&opr1, argc, argv);
+	//if Check function return 0, exit program
 	if(check == 0)
 	{
 		return 0;
 	}
 	
 	//assign filenum entered by user and open that file
-	char *p = (char*)malloc(sizeof(char)*5);
+	char *p = (char*)malloc(sizeof(char)*1);
 	sprintf(p, "raw_data_%d.txt", opr1.filenum);
 	printf("opening %s...\n", p);
 	
-	double arr[100];
-	size_t s = sizeof(arr)/sizeof(arr[0]);
-	FILE *openFile = fopen(p, "r");
+	double arr[5];//array to store value
+	size_t size = sizeof(arr)/sizeof(arr[0]);//size of array
+	FILE *openFile = fopen(p, "r");// pointer file to read
+	
+	
+	//if file requested is empty or does not exist display error and exit program
 	if(openFile == NULL)
 	{
 		printf("File does not exist. Please use a proper data file and include it in the same directory as the program.\n");
+		fclose(openFile);
+		free(p);
 		return 0;
 	}
+	//if file exist and is not empty read the content of the file
 	else
 	{
-		int i = 0;
-		double d = 0;
-		printf("File content: \n");
-		while(fscanf(openFile, "%lf", &d) != EOF)
+		int i = 0; //counter
+		while(fgetc(openFile) != EOF)
 		{
-			arr[i] = d;
+			if(i < 2)
+			{
+				if(i == 1)
+				{
+					fscanf(openFile, "%lf", &opr1.max);
+				}
+			}
+			else
+			{
+				fscanf(openFile, "%lf", &arr[i-2]);
+			}
 			i++;
 		}
+		fclose(openFile);
 	}
-	
+	//if user want to scale data open and do the scale operation
 	if(opr1.noFile == false && opr1.noScale == false)
 	{
-		printf("Scaling %lf of data\n", opr1.scale);
-		ScaledData(arr, opr1.scale, s);
+		printf("Scaling data\n");
+		ScaledData(arr, opr1.scale, size);
 	}
+	//if user want to offset data open and do the offset operation
 	else if(opr1.noFile == false && opr1.noOffset == false)
 	{
-		printf("Offsetting %lf of data\n", opr1.offset);
-		//OffsetData(arr, opr1.offset, s);
+		printf("Offsetting data\n");
+		OffsetData(arr, opr1.offset, size);
 	}
+	SaveinFile(&opr1, arr, size); //saves to processed data to a file
 	
+	free(p); // free pointer p
+
 	return 0;
 	
 }
-
