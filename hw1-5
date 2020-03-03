@@ -1,0 +1,345 @@
+#include "student_functions.h"
+//============================================================================================
+//insert new student in list
+Student *insert_student(Student *node, char *name, char *prev_name)
+{
+	Student *node_ins = (Student*)malloc(sizeof(Student));//create new node in heap
+	memset(node_ins->name, '\0', sizeof(node_ins->name));//set all of insertion node to whitespace (to prevent buffer overflow)
+	strcpy(node_ins->name, name);//copy student name given to the node
+	
+	if(node == NULL)//if list is empty
+	{
+		node_ins->prev = NULL;
+		node_ins->next = NULL;
+		node = node_ins;
+	}
+
+	else//if list is not empty
+	{
+		Student *traverse;
+		traverse = search_list(node, prev_name);//search for prev student location
+		
+		if(traverse->next == NULL)//if last element insert at the back
+		{
+			traverse->next = node_ins;
+			node_ins->prev = traverse;
+		}
+		else//insert in between
+		{
+			node_ins->next = traverse->next;
+			traverse->next = node_ins;
+			node_ins->prev = traverse;
+			node_ins->next->prev = node_ins;
+		}
+	}
+	return node;
+}
+//============================================================================================
+//delete a student from the lsit
+int delete_student(Student *node, char *name)
+{
+	Student *traverse;
+	traverse = node;
+	while(traverse != NULL)//traverse equal to null if end of node
+	{
+		if(strcmp(traverse->name, name) == 0)//If string compare return 0 means we found a match
+		{
+			if(traverse->prev == NULL)//if Student at first node
+			{
+				node = traverse->next;//point to next node of pointer node
+				node->prev = NULL;//assign previous node to NULL
+				
+			}
+			else if(traverse->next == NULL)//if Student at last node
+			{
+				traverse->prev->next = NULL;//set pointer of previous node to NULL
+			}
+			else//Student in the middle of two nodes
+			{
+				traverse->prev->next = traverse->next;//change previous node of next pointer to the next node of pointer traverse
+			}
+			free(traverse);//delete current student from list
+			return 1;//return 1 if we succeed in finding the sstudent and delete it
+		}
+		traverse = traverse->next;//iterate to next node
+	}
+	return 0;//return if we could not find the student in list to delete
+}
+//============================================================================================
+//search the student
+Student *search_list(Student *node, char *name)
+{
+	Student *find;
+	find = node;
+	while(find != NULL)//if find is not pointing to NULL(end of node) then loop
+	{
+		if(strcmp(find->name, name) == 0 || find->next == NULL)//If we found a match and it will give the first student with that name
+		{
+			return find;//return the current node find is pointing to
+		}
+		find = find->next;//iterate to the next node
+	}
+}
+//============================================================================================
+//swap two students in list
+Student *swap(Student *node1, Student *node2)
+{
+	//if one of them does not exist or both of them are last element
+	if(node1->next == NULL || node2->next == NULL)
+	{
+		return NULL;
+	}
+	
+	Student *temp;//temp pointer of type student
+	
+	//if node1 is first element
+	if(node1->prev == NULL)
+	{
+		temp = node1->next;
+		temp->prev = node2;
+		
+		temp = node2->prev;
+		temp->next = node1;
+		
+		temp = node2->next;
+		node2->next = node1->next;
+		node1->next = temp;
+		return node2;
+	}
+	//if node2 is first element
+	else if(node2->prev == NULL)
+	{
+		temp = node2->next;
+		temp->prev = node1;
+		
+		temp = node1->prev;
+		temp->next = node2;
+		
+		temp = node1->next;
+		node1->next = node2->next;
+		node2->next = temp;
+		return node1;
+	}
+	//This is for in between but not adjacent. If we were to do adjacent then we would get an infinite loop until there is no memory left which cause memory leak. If use for other than adjacent then we will lose all data before the first name entered for swap
+	else
+	{
+		//change next pointer of node1 and node2
+		temp = node1->next;
+		node1->next = node2->next;
+		node2->next = temp;
+		
+		//change prev pointer of node1 and node2
+		temp = node1->prev;
+		node1->prev = node2->prev;
+		node2->prev = temp;
+		
+		if(node1->next == NULL)//if node1 was last element
+		{
+			node2->prev->next = node1;//set next pointer of prev node of node2 to node1
+		}
+		if(node2->next == NULL)//if node2 was last element
+		{
+			node1->next->prev = node1;//set prev pointer of next node of node1 to node2
+		}
+		node1->prev->prev = node2;//set prev pointer of prev node1 to node2
+		temp->next = node2;//next pointer of prev node of node1 to node2
+	}
+	return node1;
+	
+}
+//============================================================================================
+//empty doubly linked-list
+void free_list(Student *node)
+{
+	Student *temp; //temp pointer
+	while(node != NULL)//when both of this is NULL then stop
+	{
+		temp = node;// point temp to node of pointer node
+		node = temp->next;//point node to next
+		free(temp);//free temp
+	}
+	return;//go back to main
+}
+
+//===========================================================================================
+//display the whole linked list
+void display(Student *node)
+{
+	if(node == NULL)//if list is empty
+	{
+		printf("List is empty\n");
+		return;
+	}
+	else//if list is not empty
+	{
+		Student *traverse = node;
+		//traverse the whole loop
+		while(traverse != NULL)
+		{
+			//if not last element
+			if(traverse->next != NULL)
+			{
+				printf("%s->", traverse->name);
+			}
+			//if last element
+			else
+			{
+				printf("%s\n", traverse->name);
+			}
+			traverse = traverse->next;//traverse list
+		}
+	}
+	return;
+}
+//============================================================================================
+//main function
+int main()
+{
+	Student *head = (Student*)malloc(sizeof(Student));//head points first element in the list
+	Student *search = (Student*)malloc(sizeof(Student));//use in search and swap function
+	head = NULL;//initialize to NULL
+	search = NULL;//initialize to NULL
+	
+	char *name1 = malloc(sizeof(char)*MAX);//name1 for user input first name
+	char *name2 = malloc(sizeof(char)*MAX);//name2 for user input second name
+	
+	int input = 0;//user input used in switch case
+	int del_student = 0;//used in delete_student function to represent true or false
+	bool stop = false;//bool type to represent true or false if user ask to end program
+	
+	
+	//initialize list can be removed and entered manually
+	head = insert_student(head, "Zach" , "");//head->Zach
+	head = insert_student(head, "Jake" , "Zach");//head->Zach->Jake
+	head = insert_student(head, "Bob" , "Zach");//head->Zach->Bob->Jake
+	head = insert_student(head, "Carl" , "none");//head->Zach->Bob->Jake->Carl
+	head = insert_student(head, "Ace" , "Jake");//head->Zach->Bob->Jake->Ace->Carl
+	
+	printf("\nWW838's Program\n");
+	
+	//while stop does not equal true keep looping
+	while(stop != true)
+	{
+		//print for user on what each number does
+		printf("\nEnter a number based on the list below:\n");
+		printf("1 - Insert Student\n");
+		printf("2 - Search Student\n");
+		printf("3 - Swap Student\n");
+		printf("4 - Delete Student\n");
+		printf("5 - Display List\n");
+		printf("6 - End Program\n");
+		printf("Enter Input: ");
+		scanf("%d", &input);
+		
+		printf("\nThis Program is case sensitive\n");
+		switch(input)
+		{
+			case 1://insert student into list
+				printf("\nIf it is the first insert or the second student name could not be found.\nThe program will insert as the last element.\n");
+				printf("Enter Student name to be added to list: ");
+				scanf("%s", name1);
+				printf("Enter second student name for the student to be inserted to list: ");
+				scanf("%s", name2);
+				insert_student(head, name1, name2);
+				
+				break;	
+				
+			case 2://search student in list
+				printf("Enter student name to search in list: ");
+				scanf("%s", name1);
+				search_list(head, name1);
+				search = search_list(head, name1);
+				if(search == NULL)//check last element
+				{
+					printf("Student is in list.\n");
+				}
+				else
+				{
+					printf("Student not in list.\n");
+				}
+				search = NULL;
+				break;	
+			
+			case 3://swap two students only at the end. This does not cover cases for adjacent nodes as it will create a memory leak. This also does not cater for in between but not adjacent because we will lose all data before the first name given to swap
+				printf("Enter first student name to be swap in list: ");
+				scanf("%s", name1);
+				printf("Enter second student name to be swap in list: ");
+				scanf("%s", name2);
+				search = head;
+				search = swap(search_list(search, name1), search_list(search, name2));
+				if(search != NULL)
+				{
+					head = search;
+					free_list(search);
+				}
+				else
+				{
+					printf("Error, Unable to Swap.\n");
+				}
+				break;	
+			
+			case 4://delete student from list
+				printf("Enter Student name to be deleted from list: ");
+				scanf("%s", name1);
+				del_student = delete_student(head, name1);
+				if(del_student == 1)
+				{
+					printf("Deletion Successful.\n");
+				}
+				else
+				{
+					printf("Deletion Unsuccessful.\n");
+				}
+				break;	
+				
+			case 5://display all students in list
+				printf("Displaying all students in list:\n");
+				display(head);
+				break;
+			
+			case 6:	//end program
+				printf("Ending program\n");
+				free_list(head);
+				free(name1);
+				free(name2);
+				free(search);
+Skip to content
+ZachWolfy / ECE3220
+Code Issues 0 Pull requests 0 Projects 0 Actions Security
+ECE3220/ #include "student_functions.h"/============================================================================================/insert new student in list Student *insert_student(Student *node, char *name, char *prev_name) { Student *node_ins = (Student*)malloc(sizeof(Student));/create new node in heap memset(node_ins->name, '\0', sizeof(node_ins->name));/set all of insertion node to whitespace (to prevent buffer overflow) strcpy(node_ins->name, name);/copy student name given to the node if(node == NULL)/if list is empty { node_ins->prev = NULL; node_ins->next = NULL; node = node_ins; } else/if list is not empty { Student *traverse; traverse = search_list(node, prev_name);/search for prev student location if(traverse->next == NULL)/if last element insert at the back { traverse->next = node_ins; node_ins->prev = traverse; } else/insert in between { node_ins->next = traverse->next; traverse->next = node_ins; node_ins->prev = traverse; node_ins->next->prev = node_ins; } } return node; }/============================================================================================/delete a student from the lsit int delete_student(Student *node, char *name) { Student *traverse; traverse = node; while(traverse != NULL)/traverse equal to null if end of node { if(strcmp(traverse->name, name) == 0)/If string compare return 0 means we found a match { if(traverse->prev == NULL)/if Student at first node { node = traverse->next;/point to next node of pointer node node->prev = NULL;/assign previous node to NULL } else if(traverse->next == NULL)/if Student at last node { traverse->prev->next = NULL;/set pointer of previous node to NULL } else/Student in the middle of two nodes { traverse->prev->next = traverse->next;/change previous node of next pointer to the next node of pointer traverse } free(traverse);/delete current student from list return 1;/return 1 if we succeed in finding the sstudent and delete it } traverse = traverse->next;/iterate to next node } return 0;/return if we could not find the student in list to delete }/============================================================================================/search the student Student *search_list(Student *node, char *name) { Student *find; find = node; while(find != NULL)/if find is not pointing to NULL(end of node) then loop { if(strcmp(find->name, name) == 0 || find->next == NULL)/If we found a match and it will give the first student with that name { return find;/return the current node find is pointing to } find = find->next;/iterate to the next node } }/============================================================================================/swap two students in list Student *swap(Student *node1, Student *node2) {/if one of them does not exist or both of them are last element if(node1->next == NULL || node2->next == NULL) { return NULL; } Student *temp;/temp pointer of type student/if node1 is first element if(node1->prev == NULL) { temp = node1->next; temp->prev = node2; temp = node2->prev; temp->next = node1; temp = node2->next; node2->next = node1->next; node1->next = temp; return node2; }/if node2 is first element else if(node2->prev == NULL) { temp = node2->next; temp->prev = node1; temp = node1->prev; temp->next = node2; temp = node1->next; node1->next = node2->next; node2->next = temp; return node1; }/This is for in between but not adjacent. If we were to do adjacent then we would get an infinite loop until there is no memory left which cause memory leak. If use for other than adjacent then we will lose all data before the first name entered for swap else {/change next pointer of node1 and node2 temp = node1->next; node1->next = node2->next; node2->next = temp;/change prev pointer of node1 and node2 temp = node1->prev; node1->prev = node2->prev; node2->prev = temp; if(node1->next == NULL)/if node1 was last element { node2->prev->next = node1;/set next pointer of prev node of node2 to node1 } if(node2->next == NULL)/if node2 was last element { node1->next->prev = node1;/set prev pointer of next node of node1 to node2 } node1->prev->prev = node2;/set prev pointer of prev node1 to node2 temp->next = node2;/next pointer of prev node of node1 to node2 } return node1; }/============================================================================================/empty doubly linked-list void free_list(Student *node) { Student *temp;/temp pointer while(node != NULL)/when both of this is NULL then stop { temp = node;/point temp to node of pointer node node = temp->next;/point node to next free(temp);/free temp } return;/go back to main }/===========================================================================================/display the whole linked list void display(Student *node) { if(node == NULL)/if list is empty { printf("List is empty\n"); return; } else/if list is not empty { Student *traverse = node;/traverse the whole loop while(traverse != NULL) {/if not last element if(traverse->next != NULL) { printf("%s->", traverse->name); }/if last element else { printf("%s\n", traverse->name); } traverse = traverse->next;/traverse list } } return; }/============================================================================================/main function int main() { Student *head = (Student*)malloc(sizeof(Student));/head points first element in the list Student *search = (Student*)malloc(sizeof(Student));/use in search and swap function head = NULL;/initialize to NULL search = NULL;/initialize to NULL char *name1 = malloc(sizeof(char)*MAX);/name1 for user input first name char *name2 = malloc(sizeof(char)*MAX);/name2 for user input second name int input = 0;/user input used in switch case int del_student = 0;/used in delete_student function to represent true or false bool stop = false;/bool type to represent true or false if user ask to end program/initialize list can be removed and entered manually head = insert_student(head, "Zach" , "");/head->Zach head = insert_student(head, "Jake" , "Zach");/head->Zach->Jake head = insert_student(head, "Bob" , "Zach");/head->Zach->Bob->Jake head = insert_student(head, "Carl" , "none");/head->Zach->Bob->Jake->Carl head = insert_student(head, "Ace" , "Jake");/head->Zach->Bob->Jake->Ace->Carl printf("\nWW838's Program\n");/while stop does not equal true keep looping while(stop != true) {/print for user on what each number does printf("\nEnter a number based on the list below:\n"); printf("1 - Insert Student\n"); printf("2 - Search Student\n"); printf("3 - Swap Student\n"); printf("4 - Delete Student\n"); printf("5 - Display List\n"); printf("6 - End Program\n"); printf("Enter Input: "); scanf("%d", &input); printf("\nThis Program is case sensitive\n"); switch(input) { case 1:/insert student into list printf("\nIf it is the first insert or the second student name could not be found.\nThe program will insert as the last element.\n"); printf("Enter Student name to be added to list: "); scanf("%s", name1); printf("Enter second student name for the student to be inserted to list: "); scanf("%s", name2); insert_student(head, name1, name2); break; case 2:/search student in list printf("Enter student name to search in list: "); scanf("%s", name1); search_list(head, name1); search = search_list(head, name1); if(search == NULL)/check last element { printf("Student is in list.\n"); } else { printf("Student not in list.\n"); } search = NULL; break; case 3:/swap two students only at the end. This does not cover cases for adjacent nodes as it will create a memory leak. This also does not cater for in between but not adjacent because we will lose all data before the first name given to swap printf("Enter first student name to be swap in list: "); scanf("%s", name1); printf("Enter second student name to be swap in list: "); scanf("%s", name2); search = head; search = swap(search_list(search, name1), search_list(search, name2)); if(search != NULL) { head = search; free_list(search); } else { printf("Error, Unable to Swap.\n"); } break; case 4:/delete student from list printf("Enter Student name to be deleted from list: "); scanf("%s", name1); del_student = delete_student(head, name1); if(del_student == 1) { printf("Deletion Successful.\n"); } else { printf("Deletion Unsuccessful.\n"); } break; case 5:/display all students in list printf("Displaying all students in list:\n"); display(head); break; case 6:/
+1
+
+​
+
+@ZachWolfy
+Commit new file
+Commit summary
+Optional extended description
+Commit directly to the Homework-1 branch.
+Create a new branch for this commit and start a pull request. Learn more about pull requests.
+
+    © 2020 GitHub, Inc.
+    Terms
+    Privacy
+    Security
+    Status
+    Help
+
+    Contact GitHub
+    Pricing
+    API
+    Training
+    Blog
+    About
+
+
+				stop = true;
+				break;	
+			default : 
+				printf("Wrong input. Please try again\n");
+				break;
+		}
+	}
+	
+	return 0;
+}
